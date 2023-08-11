@@ -1,0 +1,14 @@
+<launch>
+
+    <arg name="port" default="/dev/ttyACM0"/>
+    <arg name="baud" default="115200"/>
+
+    <!-- [Node] listen to keyboard control -->
+    <node pkg="rosserial_python" type="keyboard_control.py" name="keyboard_listen" output="screen"/>
+
+    <!-- [node] arduino with ros -->
+    <node pkg="rosserial_python" type="serial_node.py" name="arduino" output="screen">
+        <param name="port" value="$(arg port)"/>
+        <param name="baud" value="$(arg baud)"/>
+    </node>
+</launch> 
