@@ -38,7 +38,7 @@
 
 // ======================================== Define some variables =======================================
 // PINs I/O dictionary
-int action_percentage[9] = {35, 37, 40, 43, 50, 57, 60, 63, 65}; // 0~8: 35%, 37%, 40%, 43%, 50%, 57%, 60%, 63%, 65%
+int action_percentage[11] = {34, 36, 38, 41, 45, 50, 55, 59, 62, 64, 66}; // 11 percentage: 34%, 36%, 38%, 41%, 45%, 50%, 55%, 59%, 62%, 64%, 66%
 int action_percentage_length = sizeof(action_percentage) / sizeof(action_percentage[0]);
 int middle_pos = action_percentage_length / 2;
 
@@ -123,8 +123,8 @@ const Action_dict action_dict[]{
 int resolution = 12;
 int full_pulse = 0;
 int radio_input[13]; // idx 1 to 6 mean radio input pin 1~6 (channel 1~6)
-// int minmax_radio_input[13] = {0, 1500, 0, 1500, 0, 1500, 0, 1500, 0, 1500, 0, 1500, 0};
-int minmax_radio_input[13] = {0, 1100, 1921, 1109, 1930, 1109, 1930, 1110, 1930, 969, 2070, 969, 2070}; 
+int minmax_radio_input[13] = {0, 1500, 0, 1500, 0, 1500, 0, 1500, 0, 1500, 0, 1500, 0};
+// int minmax_radio_input[13] = {0, 1100, 1921, 1109, 1930, 1109, 1930, 1110, 1930, 969, 2070, 969, 2070}; 
 int radio_channel_range[7]; // idx 1 to 6 mean radio channel full range
 int output[13]; // output array to Output() function, idx 7~12 mean pin 7~12 (channel 1~6) 
 
@@ -135,7 +135,7 @@ std_msgs::String string_msg;
 
 // Record to SD
 File file;
-const char* data_name = "230809_1.txt";
+const char* data_name = "230813_3.txt";
 
 
 // ======================================== Functions ======================================== 
@@ -148,8 +148,10 @@ void kbCallback(const std_msgs::String & msg){
   // state += key;
   // Serial.println(state);
   
-  // record to SD 
-  // file.println(state);
+  // record to SD
+  if (key != "0"){
+    file.println(key);
+  } 
 }
 ros::Subscriber<std_msgs::String> kbSub("publisher_keyboard", kbCallback);
 
@@ -174,24 +176,24 @@ void radio_calibration(){
   Serial.println(frequency);
   
   // record radio min max
-  // for (int x = 1; x <= 20; x++){
-  //   for (int pin = 1; pin <= 6; pin++) {
-  //     radio_input[pin] = pulseIn(pin, HIGH, 20000);
+  for (int x = 1; x <= 20; x++){
+    for (int pin = 1; pin <= 6; pin++) {
+      radio_input[pin] = pulseIn(pin, HIGH, 20000);
 
-  //     if (radio_input[pin] < minmax_radio_input[2*pin-1]){
-  //       minmax_radio_input[2*pin-1] = radio_input[pin];
-  //     }
-  //     if (radio_input[pin] > minmax_radio_input[2*pin]){
-  //       minmax_radio_input[2*pin] = radio_input[pin];
-  //     }
-  //     delay(120);
-  //   }
-  //   for (int idx = 1; idx <= 12; idx++){
-  //     Serial.print(minmax_radio_input[idx]);
-  //     Serial.print(", ");
-  //   }
-  //   Serial.println();
-  // }
+      if (radio_input[pin] < minmax_radio_input[2*pin-1]){
+        minmax_radio_input[2*pin-1] = radio_input[pin];
+      }
+      if (radio_input[pin] > minmax_radio_input[2*pin]){
+        minmax_radio_input[2*pin] = radio_input[pin];
+      }
+      delay(120);
+    }
+    for (int idx = 1; idx <= 12; idx++){
+      Serial.print(minmax_radio_input[idx]);
+      Serial.print(", ");
+    }
+    Serial.println();
+  }
 
   //Get radio channel range
   for (int pin=1 ; pin<=6 ; pin++){
@@ -219,7 +221,7 @@ void Output(int output[]){
     state += "Channel ";
     state += String(pin);
     state += ": ";
-    state += String(output[pin+6]);
+    state += String(output[pin]);
     state += " / ";
   }
   file.println(state);
@@ -301,9 +303,9 @@ void Action(int index){
     bool loop = true;
     bool Do = true;
 
-    String state = "[Step] ====== ";
-    state += String(step);
-    Serial.println(state);
+    // String state = "[Step] ====== ";
+    // state += String(step);
+    // Serial.println(state);
 
     while (loop == true){
       if (step > 0){
@@ -342,11 +344,11 @@ void Action(int index){
     bool loop = true;
     bool Do = true;
 
-    String state = "[Step] step 1: ";
-    state += String(step_1);
-    state += " / step 2: ";
-    state += String(step_2);
-    Serial.println(state);
+    // String state = "[Step] step 1: ";
+    // state += String(step_1);
+    // state += " / step 2: ";
+    // state += String(step_2);
+    // Serial.println(state);
 
     while (loop == true){
 
@@ -501,7 +503,7 @@ void loop() {
     // if (key == "I" || key == "O"){
     //   // Start rotating & To Takeoff (I=initate , O=Operate)
     //   Takeoff(key);
-    // }
+    // }file
     // else if (key == "L"){
     //   Landing();
     // }
@@ -544,9 +546,10 @@ void loop() {
     else if (key == "5"){
       Stay();
     }
-    // else if (key == "Q"){
-    //   file.close();
-    // }
+    else if (key == "Q"){
+      file.close();
+      Serial.println(" --- save to SD ---");
+    }
     
     key = "0";
     output[PIN_throttle_output] = radio_input[PIN_throttle_input];

@@ -1,0 +1,8 @@
+prefix=/home/drone/Arduino/install
+
+Name: signal_processing
+Description: Description of signal_processing
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

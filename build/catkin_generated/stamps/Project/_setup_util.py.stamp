@@ -268,7 +268,7 @@ if __name__ == '__main__':
 
         if not args.local:
             # environment at generation time
-            CMAKE_PREFIX_PATH = r'/home/drone/Arduino/devel;/opt/ros/melodic;/home/drone/px4_ws/devel'.split(';')
+            CMAKE_PREFIX_PATH = r'/home/drone/px4_ws/devel;/opt/ros/melodic'.split(';')
         else:
             # don't consider any other prefix path than this one
             CMAKE_PREFIX_PATH = []
