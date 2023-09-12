@@ -98,7 +98,7 @@ if __name__ == '__main__':
     df_new = pd.read_csv(output_file_path2, delimiter='/',header=None)
 
     channel_dict={'4': [2],'5': [1,2],'6': [2],'8': [1],'2': [1],'1': [1,2],'7': [1,2], '9':[1,2], '3':[1,2]}
-    color_names = {'1':'red','2':'green','3': 'blue','4': 'orange','5': 'purple','6': 'brown','7': 'pink', '8':'gray', '9':'cyan'}
+    color_names = {'1':'red','2':'green','3': 'blue','4': 'orange','5': 'purple','6': 'brown','7': 'pink', '8':'gray', '9':'goldenrod'}
     # Create a proxy artist for the legend with a specific color
     legend_left = mpatches.Patch(color=color_names["4"], label='Left(4)')
     legend_stay = mpatches.Patch(color=color_names["5"], label='Stay(5)')
@@ -188,7 +188,7 @@ if __name__ == '__main__':
         suptitle.set_fontsize(40)
         # #save figure
         fig_name="_round_"+str(round+1)+".png"
-        fig.savefig("./signal_picture/"+input_file_name+fig_name, format='png', dpi=500)
+        fig.savefig("./signal_picture/"+input_file_name+fig_name, format='png', dpi=400)
         
     print("===Figure saved!===")
     

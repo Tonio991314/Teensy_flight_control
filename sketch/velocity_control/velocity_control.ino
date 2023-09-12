@@ -38,7 +38,7 @@
 
 // ======================================== Define some variables =======================================
 // PINs I/O dictionary
-int action_percentage[11] = {34, 36, 38, 41, 45, 50, 55, 59, 62, 64, 66}; // 11 percentage: 34%, 36%, 38%, 41%, 45%, 50%, 55%, 59%, 62%, 64%, 66%
+int action_percentage[11] = {35, 37, 39, 42, 46, 50, 54, 58, 61, 63, 65}; // 11 percentage: 34%, 36%, 38%, 41%, 45%, 50%, 55%, 59%, 62%, 64%, 66%
 int action_percentage_length = sizeof(action_percentage) / sizeof(action_percentage[0]);
 int middle_pos = action_percentage_length / 2;
 
@@ -133,9 +133,9 @@ String key = "0"; // initial key, set to "0"
 ros::NodeHandle node;
 std_msgs::String string_msg;
 
-// Record to SD
+// // Record to SD
 File file;
-const char* data_name = "230813_3.txt";
+const char* data_name = "230908_1.txt";
 
 
 // ======================================== Functions ======================================== 
@@ -149,9 +149,9 @@ void kbCallback(const std_msgs::String & msg){
   // Serial.println(state);
   
   // record to SD
-  if (key != "0"){
-    file.println(key);
-  } 
+  // if (key != "0"){
+  //   file.println(key);
+  // } 
 }
 ros::Subscriber<std_msgs::String> kbSub("publisher_keyboard", kbCallback);
 
@@ -208,7 +208,7 @@ void radio_calibration(){
   Serial.print(" --- Radio calibration end ---");
 }
 
-void RadioInput(){
+void RadioInput(){ 
   for (int pin = 1; pin <= 6; pin++) {
     radio_input[pin] = pulseIn(pin, HIGH, 20000);
   }
@@ -224,6 +224,7 @@ void Output(int output[]){
     state += String(output[pin]);
     state += " / ";
   }
+  // Serial.println(state);
   file.println(state);
 }
 
@@ -271,7 +272,7 @@ void print_state(int PIN_intput_array[], int direction[], int size, bool Do){
   Serial.println(state);
 }
 
-void record_to_SD(){
+void record_to_SD_file(){
   // Record to SD card
   if (SD.begin(BUILTIN_SDCARD)) {
     Serial.println(" --- SD initailization done ---");
@@ -462,7 +463,7 @@ void Stay(){
 void setup() {
 
   // Record to SD
-  record_to_SD();
+  record_to_SD_file();
 
   // Subscribe to keyboard node in ROS
   node.initNode();
@@ -495,15 +496,15 @@ void loop() {
   RadioInput();
   
   // Listen to "keyboard"
-  if (1300 <= radio_input[5] && radio_input[5] <= 1700) {
-
+  if (1300 <= radio_input[PIN_mode_input] && radio_input[PIN_mode_input] <= 1700) {
+    output[PIN_mode_output] = radio_input[PIN_mode_input];
     // Serial.println("Listen to ROS");
     
     // MAIN CODE
     // if (key == "I" || key == "O"){
     //   // Start rotating & To Takeoff (I=initate , O=Operate)
     //   Takeoff(key);
-    // }file
+    // }
     // else if (key == "L"){
     //   Landing();
     // }
@@ -553,6 +554,7 @@ void loop() {
     
     key = "0";
     output[PIN_throttle_output] = radio_input[PIN_throttle_input];
+    output[PIN_yaw_output] = radio_input[PIN_yaw_input];
     Output(output);
   }
 
