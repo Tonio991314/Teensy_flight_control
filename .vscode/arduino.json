@@ -1,5 +1,5 @@
 {
-    "sketch": "sketch/velocity_control/velocity_control.ino",
+    "sketch": "sketch/waypoint_control/waypoint_control.ino",
     "configuration": "usb=serial,speed=600,opt=o2std,keys=en-us",
     "board": "teensy:avr:teensy41",
     "port": "/dev/ttyACM0"

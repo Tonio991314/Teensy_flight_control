@@ -39,7 +39,7 @@
 
 // ======================================== Define some variables =======================================
 // PINs I/O dictionary
-int action_percentage[11] = {34, 36, 38, 41, 45, 50, 55, 59, 62, 64, 66}; // 11 percentage: 34%, 36%, 38%, 41%, 45%, 50%, 55%, 59%, 62%, 64%, 66%
+int action_percentage[13] = {35, 37, 40, 40, 42, 46, 50, 54, 58, 60, 60, 63, 65};
 int action_percentage_length = sizeof(action_percentage) / sizeof(action_percentage[0]);
 int middle_pos = action_percentage_length / 2; // 5
 
@@ -79,24 +79,31 @@ int PIN_mode_output = 11;
 int PIN_arming_output = 12;
 
 // Action index dictionary
+
 typedef struct { 
-  int up;             // 0 
-  int down;           // 1
-  int forward;        // 2
-  int backward;       // 3
-  int left;           // 4  
-  int right;          // 5
-  int right_forward;  // 6 
-  int right_backward; // 7
-  int left_forward;   // 8
-  int left_backward;  // 9
-  int turnLeft;       // 10
-  int turnRight;      // 11
+  int right = 0;           
+  int rrf = 1;            
+  int right_forward = 2;  
+  int frf = 3;            
+  int forward = 4;       
+  int flf = 5;      
+  int left_forward = 6;   
+  int llf = 7; 
+  int left = 8;   
+  int llb = 9;  
+  int left_backward = 10;       
+  int blb = 11;      
+  int backward = 12;          
+  int brb = 13;           
+  int right_backward = 14;            
+  int rrb = 15;  
+  int up = 16;            
+  int down = 17;            
+  int turnLeft = 18;            
+  int turnRight = 19;           
 } Action_index;
 
-const Action_index action_index[]{
-  {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
-};
+const Action_index action_index;
 
 // Action dictionary
 typedef struct { 
@@ -106,19 +113,28 @@ typedef struct {
 } Action_dict;
 
 const Action_dict action_dict[]{
-  {"up",             {PIN_throttle_input, 0},           {1, 0}}, // 0: up 
-  {"down",           {PIN_throttle_input, 0},           {-1, 0}}, // 1: down 
-  {"foward",         {PIN_pitch_input, 0},              {-1, 0}}, // 2: foward
-  {"backward",       {PIN_pitch_input, 0},              {1, 0}}, // 3: backward
-  {"left",           {PIN_roll_input, 0},               {-1, 0}}, // 4: left
-  {"right",          {PIN_roll_input, 0},               {1, 0}}, // 5: right
-  {"right,forward",  {PIN_roll_input, PIN_pitch_input}, {1, -1}}, // 6: right forward
-  {"right,backward", {PIN_roll_input, PIN_pitch_input}, {1, 1}}, // 7: right backward
-  {"left,forward",   {PIN_roll_input, PIN_pitch_input}, {-1, -1}}, // 8: left forward
-  {"left,backward",  {PIN_roll_input, PIN_pitch_input}, {-1, 1}}, // 9: left backward
-  {"turn left",      {PIN_yaw_input, 0},                {-1, 0}}, // 10: turn left
-  {"turn right",     {PIN_yaw_input, 0},                {1, 0}}, // 11: turn right
+  {"right",                   {PIN_roll_input, 0},               {2, 0}}, // 0: right
+  {"right,right,forward",     {PIN_roll_input, PIN_pitch_input}, {2, -1}}, // 1: right right forward
+  {"right,forward",           {PIN_roll_input, PIN_pitch_input}, {2, -2}}, // 2: right forward
+  {"forward,right,forward",   {PIN_roll_input, PIN_pitch_input}, {1, -2}}, // 3: forward right forward
+  {"foward",                  {PIN_pitch_input, 0},              {-2, 0}}, // 4: foward
+  {"forward,left,forward",    {PIN_roll_input, PIN_pitch_input}, {-1, -2}}, // 5: forward left forward
+  {"left,forward",            {PIN_roll_input, PIN_pitch_input}, {-2, -2}}, // 6: left forward
+  {"left,left,forward",       {PIN_roll_input, PIN_pitch_input}, {-2, -1}}, // 7: left left forward
+  {"left",                    {PIN_roll_input, 0},               {-2, 0}}, // 8: left
+  {"left,left,backward",      {PIN_roll_input, PIN_pitch_input}, {-2, 1}}, // 9: left left backward
+  {"left,backward",           {PIN_roll_input, PIN_pitch_input}, {-2, 2}}, // 10: left backward
+  {"backward,left,backward",  {PIN_roll_input, PIN_pitch_input}, {-1, 2}}, // 11: backward left backward
+  {"backward",                {PIN_pitch_input, 0},              {2, 0}}, // 12: backward
+  {"backward,right,backward", {PIN_roll_input, PIN_pitch_input}, {1, 2}}, // 13: backward right backward
+  {"right,backward",          {PIN_roll_input, PIN_pitch_input}, {2, 2}}, // 14: right backward
+  {"right,right,backward",    {PIN_roll_input, PIN_pitch_input}, {2, 1}}, // 15: right right backward
+  {"up",                      {PIN_throttle_input, 0},           {2, 0}}, // 16: up 
+  {"down",                    {PIN_throttle_input, 0},           {-2, 0}}, // 17: down 
+  {"turn left",               {PIN_yaw_input, 0},                {-2, 0}}, // 18: turn left
+  {"turn right",              {PIN_yaw_input, 0},                {2, 0}}, // 19: turn right
 };
+
 
 // Some variables
 int resolution = 12;
@@ -128,6 +144,7 @@ int minmax_radio_input[13] = {0, 1500, 0, 1500, 0, 1500, 0, 1500, 0, 1500, 0, 15
 // int minmax_radio_input[13] = {0, 1100, 1921, 1109, 1930, 1109, 1930, 1110, 1930, 969, 2070, 969, 2070}; 
 int radio_channel_range[7]; // idx 1 to 6 mean radio channel full range
 int output[13]; // output array to Output() function, idx 7~12 mean pin 7~12 (channel 1~6) 
+bool listen_to_radio = true;
 
 // ROS node 
 String key = "0"; // initial key, set to "0"
@@ -147,16 +164,14 @@ typedef struct {
 Position_dict position_dict;
 float drift_radius = 0.0;
 float drift_theta = 0.0;
-float path_dist = 0.0;
-float path_theta = 0.0;
-float drift_threshold = 10; // cm
+float drift_threshold = 0.25; // m
+float path_threshold = 0.25; // m
+
 
 // Record to SD
 File file;
+const char* data_name = "230915_1.txt";
 bool record_flag = false;
-const char* data_name = "230813_3.txt";
-
-
 
 // ======================================== Functions ======================================== 
 // Subscribe keyboard typing
@@ -169,35 +184,34 @@ void kbCallback(const std_msgs::String & msg){
   // Serial.println(state);
   
   // record to SD
-  if (key != "0" && record_flag == true){
-    file.println(key);
-  } 
+  if (record_flag == true){
+      if (key != "0"){
+      file.println(key);
+    } 
+  }
 }
 ros::Subscriber<std_msgs::String> kbSub("publisher_keyboard", kbCallback);
 
 // Subscribe current pose
 void poseCallback(const geometry_msgs::PoseStamped& msg){
-    position_dict.x_now_pos = msg.pose.position.x * 100;
-    position_dict.y_now_pos = msg.pose.position.y * 100;
-    
+    int count = 0;
+    if (count % 5 == 0){
+      position_dict.x_now_pos = -msg.pose.position.x;
+      position_dict.y_now_pos = -msg.pose.position.y;
+      count++;
+    }
     drift_radius = sqrt(pow((position_dict.x_now_pos - position_dict.x_current_pos), 2) +
                         pow((position_dict.y_now_pos - position_dict.y_current_pos), 2));
 
     drift_theta = atan2((position_dict.y_now_pos - position_dict.y_current_pos), 
-                        (position_dict.x_now_pos - position_dict.x_current_pos)) * 180 / 3.1415926;
-    // print state
-    // if (drift_radius > drift_threshold){
-    //   Serial.print("drift_theta: ");
-    //   Serial.println(drift_theta);
-    // }
-    // Serial.print("x_now: ");
-    // Serial.print(position_dict.x_now_pos);
-    // Serial.print("cm, y_now: ");
-    // Serial.print(position_dict.y_now_pos);
-    // Serial.print("cm, x_current: ");
-    // Serial.print(position_dict.x_current_pos);
-    // Serial.print("cm, y_current: ");
-    // Serial.println(position_dict.y_current_pos);
+                        (position_dict.x_now_pos - position_dict.x_current_pos)) * 180 / 3.1415926; // from current to now
+
+    Serial.print("x_now: ");
+    Serial.print(position_dict.x_now_pos);
+    Serial.print(", y_now: ");
+    Serial.print(position_dict.y_now_pos);
+    Serial.print(", drift_radius: ");
+    Serial.println(drift_radius);
 }
 ros::Subscriber<geometry_msgs::PoseStamped> poseSub("online_2d_robot_pose", poseCallback);
 
@@ -271,7 +285,9 @@ void Output(int output[]){
     state += String(output[pin]);
     state += " / ";
   }
-  file.println(state);
+  if (record_flag == true){
+    file.println(state);
+  }
 }
 
 int get_PWM(int PIN_input, int direction){
@@ -318,7 +334,7 @@ void print_state(int PIN_intput_array[], int direction[], int size, bool Do){
   Serial.println(state);
 }
 
-void record_to_SD(){
+void record_to_SD_file(){
   // Record to SD card
   if (SD.begin(BUILTIN_SDCARD)) {
     Serial.println(" --- SD initailization done ---");
@@ -331,22 +347,101 @@ void record_to_SD(){
 }
 
 // ======================================== Actions ========================================
+// Holding
 void Holding(){
-    while (drift_radius > drift_threshold){
-        if (drift_theta > 0 && drift_theta <= 90){ // Quadrant 1
-          // TODO
-          // Action(action_index[0].left_backward);
-          // Stay();
-          delay(1000);
-        }else if (drift_theta > 90 && drift_theta <= 180){ // Quadrant 2
-          // TODO
-        }else if (drift_theta > -180 && drift_theta <= -90){ // Quadrant 3
-          // TODO{
-        }else if (drift_theta > -90 && drift_theta <= 0){ // Quadrant 4
-          // TODO{
-        }
-    }       
+  while(listen_to_radio == false && drift_radius > drift_threshold){
+    if (abs(drift_theta - 0) < 5){
+      Holding_flow(action_index.left);
+    }
+    else if (drift_theta >= 5 && drift_theta <= 40){
+      Holding_flow(action_index.llb);
+    }
+    else if (abs(drift_theta - 45) < 5){
+      Holding_flow(action_index.left_backward);
+    }
+    else if (drift_theta >= 50 && drift_theta <= 85){
+      Holding_flow(action_index.blb);
+    }
+    else if (abs(drift_theta - 90) < 5){
+      Holding_flow(action_index.backward);
+    }
+    else if (drift_theta >= 95 && drift_theta <= 130){
+      Holding_flow(action_index.brb);
+    }
+    else if (abs(drift_theta - 135) < 5){
+      Holding_flow(action_index.right_backward);
+    }
+    else if (drift_theta >= 140 && drift_theta <= 175){
+      Holding_flow(action_index.rrb);
+    }
+    else if (abs(drift_theta - 180) < 5){
+      Holding_flow(action_index.right);
+    }
+    else if (drift_theta >= -40 && drift_theta <= -5){
+      Holding_flow(action_index.llf);
+    }
+    else if (abs(drift_theta - (-45)) < 5){
+      Holding_flow(action_index.left_forward);
+    }
+    else if (drift_theta >= -85 && drift_theta <= -50){
+      Holding_flow(action_index.flf);
+    }
+    else if (abs(drift_theta - (-90)) < 5){
+      Holding_flow(action_index.forward);
+    }
+    else if (drift_theta >= -130 && drift_theta <= -95){
+      Holding_flow(action_index.frf);
+    }
+    else if (abs(drift_theta - (-135)) < 5){
+      Holding_flow(action_index.right_forward);
+    }
+    else if (drift_theta >= -175 && drift_theta <= -140){
+      Holding_flow(action_index.rrf);
+    }
+    else if (abs(drift_theta - (-180)) < 5){
+      Holding_flow(action_index.right);
+    }
+    node.spinOnce();
+
+    RadioInput();
+    Stay();
+    output[PIN_yaw_output] = radio_input[PIN_yaw_input];
+    output[PIN_throttle_output] = radio_input[PIN_throttle_input];
+
+    if (radio_input[5] <= 1300 || radio_input[5] >= 1700){
+      listen_to_radio = true;
+      break;
+    }     
+  } 
 }
+
+void Holding_flow(int action_idx){
+
+  Serial.print(" --- Need to ");
+  Serial.println(action_dict[action_idx].name);
+
+  int inverse_action_idx;
+
+  if (action_idx < 8){
+    inverse_action_idx = action_idx + 8;
+  }else if (action_idx >= 8){
+    inverse_action_idx = action_idx - 8;
+  }
+
+  Action(action_idx);
+  delay(600);
+  Stay();
+  // Action(action_idx);
+
+  delay(30);
+  Action(inverse_action_idx);
+  delay(200);
+  Stay();
+  
+  node.spinOnce();
+}
+
+// Actions
 void Action(int index){
   int PIN_intput_array[2];
   int direction[2];
@@ -391,7 +486,7 @@ void Action(int index){
       output[PIN_throttle_output] = radio_input[PIN_throttle_input];
       Output(output);
     }
-    print_state(PIN_intput_array, direction, size, Do);
+    // print_state(PIN_intput_array, direction, size, Do);
   }
   else if (PIN_intput_array[1] != 0){ // 2-way move
 
@@ -446,13 +541,13 @@ void Action(int index){
       output[PIN_throttle_output] = radio_input[PIN_throttle_input];
       Output(output);
     }
-    print_state(PIN_intput_array, direction, size, Do);
+    // print_state(PIN_intput_array, direction, size, Do);
   }
 
-  String state = " --- Action ";
-  state = state += action_dict[index].name;
-  state = state += " finish ---";
-  Serial.println(state);
+  // String state = " --- Action ";
+  // state = state += action_dict[index].name;
+  // state = state += " finish ---";
+  // Serial.println(state);
 }
 
 void Stay(){ 
@@ -465,39 +560,83 @@ void Stay(){
   pin_dict[PIN_pitch_output].percentage_pos = middle_pos;
   pin_dict[PIN_yaw_output].percentage_pos = middle_pos;
 
-  Serial.println("roll, pitch, yaw set to 50% !");
+  // Serial.println("roll, pitch, yaw set to 50% !");
   output[PIN_throttle_output] = radio_input[PIN_throttle_input];
   Output(output);
 }
 
-void path_planning(){
-  path_dist = sqrt(pow((position_dict.x_target_pos - position_dict.x_current_pos), 2) +
-                    pow((position_dict.y_target_pos - position_dict.y_current_pos), 2));
-  path_theta = atan2((position_dict.y_target_pos - position_dict.y_current_pos), 
-                       (position_dict.x_target_pos - position_dict.x_current_pos)) * 180 / 3.1415926;
+void moving_flow(int action_idx){
+  Action(action_idx);
+  delay(100);
+  Stay();
+  node.spinOnce();
 
-  bool x_go = false;
-  bool y_go = false;
+  RadioInput();
+  output[PIN_yaw_output] = radio_input[PIN_yaw_input];
+  output[PIN_throttle_output] = radio_input[PIN_throttle_input];
 
-  while (path_dist > drift_threshold){
-    if (path_theta > 0 && path_theta <= 90){ // Quadrant 1
-      // TODO
-    }
-  }
+  Serial.println(" --- moving... --- ");
 
+  if (radio_input[5] <= 1300 || radio_input[5] >= 1700){
+    listen_to_radio = true;
+  }     
 }
 
+// control planning
+void waypoing_control(float delta_x, float delta_y){
+  float x_target_pos = position_dict.x_current_pos + delta_x;
+  float y_target_pos = position_dict.y_current_pos + delta_y;
 
+  // x-axis moving
+  if (delta_x > 0){ // go right
+    while (listen_to_radio == false && abs(position_dict.x_now_pos - x_target_pos) > path_threshold){
+      moving_flow(action_index.right);
+    }
+    Action(action_index.left);
+    delay(100);
+    Stay();
+  }else if (delta_x < 0){ // go left
+    while (listen_to_radio == false && abs(position_dict.x_now_pos - x_target_pos) > path_threshold){
+      moving_flow(action_index.left);
+    }
+    Action(action_index.right);
+    delay(100);
+    Stay();
+  }
+
+  // y-axis moving
+  if (delta_y > 0){ // go forward
+    while (listen_to_radio == false && abs(position_dict.y_now_pos - y_target_pos) > path_threshold){
+      moving_flow(action_index.forward);
+    }
+    Action(action_index.backward);
+    delay(100);
+    Stay();
+  }else if (delta_y < 0){ // go backward
+    while (listen_to_radio == false && abs(position_dict.y_now_pos - y_target_pos) > path_threshold){
+      moving_flow(action_index.backward);
+    }
+    Action(action_index.forward);
+    delay(100);
+    Stay();
+  }
+  Serial.print(" ================= move finish ================== ");
+  position_dict.x_current_pos = x_target_pos;
+  position_dict.y_current_pos = y_target_pos;
+  node.spinOnce();
+}
 
 // ======================================== Main code ========================================
 void setup() {
 
   // Record to SD
-  record_to_SD();
+  if (record_flag == true){
+    record_to_SD_file();
+  }
 
   // Subscribe to keyboard node in ROS
   node.initNode();
-  // node.subscribe(kbSub);
+  node.subscribe(kbSub);
   node.subscribe(poseSub);
   
   // Setup Serial
@@ -519,83 +658,114 @@ void setup() {
   pinMode(12, OUTPUT);
 
   // Calibration
-//   radio_calibration(); 
+  radio_calibration(); 
 }
 
 void loop() {
-  node.spinOnce();
-  Holding();  
-//   RadioInput();
+  node.spinOnce(); 
+  RadioInput();
   
-//   // Listen to "keyboard"
-//   if (1300 <= radio_input[5] && radio_input[5] <= 1700) {
+  // Listen to "keyboard"
+  if (1300 <= radio_input[5] && radio_input[5] <= 1700){
+    listen_to_radio = false;
+  }else{
+    listen_to_radio = true;
+  }
+  
+  if (listen_to_radio == false) {
+    // Serial.println("Listen to ROS");
 
-//     // Serial.println("Listen to ROS");
+    // if key not in [2, 4, 6, 8, 5], do Holding
+    if (key != "2" && key != "4" && key != "6" && key != "8" && key != "5"){
+      Holding();
+    }
+    // MAIN CODE of waypoint control
+    else if (key == "6"){ // move +1 m in x-axis
+      waypoing_control(0.6, 0);
+    }
+    else if (key == "4"){ // move -1 m in x-axis
+      waypoing_control(-0.6, 0);
+    }
+    else if (key == "8"){ // move +1 m in y-axis
+      waypoing_control(0, 0.6);
+    }
+    else if (key == "2"){ // move -1 m in y-axis
+      waypoing_control(0, -0.6);
+    }
+    else if (key == "5"){ // stay
+      Stay();
+    }
+
+
+    // MAIN CODE of velocity control
+    // if (key == "I" || key == "O"){
+    //   // Start rotating & To Takeoff (I=initate , O=Operate)
+    //   Takeoff(key);
+    // }
+    // else if (key == "L"){
+    //   Landing();
+    // }
+    // if (key == "w"){
+    //   Action(action_index.up);
+    // }
+    // else if (key=="s"){
+    //   Action(action_index.down);
+    // }
+    // else if (key == "a"){
+    //   Action(action_index.turnLeft);
+    // }
+    // else if (key == "d"){
+    //   Action(action_index.turnRight);
+    // }
+    // else if (key == "8"){
+    //   Action(action_index.forward);
+    // }
+    // else if (key == "2"){
+    //   Action(action_index.backward);
+    // }
+    // else if (key == "4"){
+    //   Action(action_index.left);
+    // }
+    // else if (key == "6"){
+    //   Action(action_index.right);
+    // }
+    // else if (key == "9"){
+    //   Action(action_index.right_forward);
+    // }
+    // else if (key == "3"){
+    //   Action(action_index.right_backward);
+    // }
+    // else if (key == "7"){
+    //   Action(action_index.left_forward);
+    // }
+    // else if (key == "1"){
+    //   Action(action_index.left_backward);
+    // }
+    // else if (key == "5"){
+    //   Stay();
+    // }
+    // else if (key == "Q"){
+    //   if (record_flag == true){
+    //     file.close();
+    //     Serial.println(" --- save to SD ---");
+    //   }
+    // }
     
-//     // MAIN CODE
-//     // if (key == "I" || key == "O"){
-//     //   // Start rotating & To Takeoff (I=initate , O=Operate)
-//     //   Takeoff(key);
-//     // }file
-//     // else if (key == "L"){
-//     //   Landing();
-//     // }
-//     if (key == "w"){
-//       Action(action_index[0].up);
-//     }
-//     else if (key=="s"){
-//       Action(action_index[0].down);
-//     }
-//     else if (key == "a"){
-//       Action(action_index[0].turnLeft);
-//     }
-//     else if (key == "d"){
-//       Action(action_index[0].turnRight);
-//     }
-//     else if (key == "8"){
-//       Action(action_index[0].forward);
-//     }
-//     else if (key == "2"){
-//       Action(action_index[0].backward);
-//     }
-//     else if (key == "4"){
-//       Action(action_index[0].left);
-//     }
-//     else if (key == "6"){
-//       Action(action_index[0].right);
-//     }
-//     else if (key == "9"){
-//       Action(action_index[0].right_forward);
-//     }
-//     else if (key == "3"){
-//       Action(action_index[0].right_backward);
-//     }
-//     else if (key == "7"){
-//       Action(action_index[0].left_forward);
-//     }
-//     else if (key == "1"){
-//       Action(action_index[0].left_backward);
-//     }
-//     else if (key == "5"){
-//       Stay();
-//     }
-//     else if (key == "Q"){
-//       file.close();
-//       Serial.println(" --- save to SD ---");
-//     }
-    
-//     key = "0";
-//     output[PIN_throttle_output] = radio_input[PIN_throttle_input];
-//     Output(output);
-//   }
+    // key = "0";
+    output[PIN_throttle_output] = radio_input[PIN_throttle_input];
+    output[PIN_yaw_output] = radio_input[PIN_yaw_input];
+
+    Output(output);
+  }
 
   // Listen to "Radio"
-//   else{
-//     key = "0";
-//     for (int pin = 1; pin <= 6;  pin++){
-//       output[pin+6] = radio_input[pin];
-//     }
-//     Output(output);
-//   }
-//   delay(10);
+  else{
+    key = "0";
+    for (int pin = 1; pin <= 6;  pin++){
+      output[pin+6] = radio_input[pin];
+    }
+    Output(output);
+    Serial.println(" --- Listen to Radio ---");
+  }
+  delay(10);
 }  

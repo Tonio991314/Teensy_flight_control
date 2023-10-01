@@ -12,7 +12,7 @@
             ],
             "intelliSenseMode": "gcc-x64",
             "includePath": [
-                "/tmp/arduino/sketches/6FC1D1A6AE75041C8174F9B76A3DECEB/pch",
+                "/tmp/arduino/sketches/A8A00EA9187064A8C810A2FD9D5CA615/pch",
                 "/home/drone/.arduino15/packages/teensy/hardware/avr/1.58.1/cores/teensy4",
                 "/home/drone/Arduino/libraries/Rosserial_Arduino_Library/src",
                 "/home/drone/.arduino15/packages/teensy/hardware/avr/1.58.1/libraries/SD/src",
@@ -28,7 +28,7 @@
                 "/home/drone/.arduino15/packages/teensy/tools/teensy-compile/11.3.1/arm/arm-none-eabi/include"
             ],
             "forcedInclude": [
-                "/tmp/arduino/sketches/6FC1D1A6AE75041C8174F9B76A3DECEB/pch/Arduino.h"
+                "/tmp/arduino/sketches/A8A00EA9187064A8C810A2FD9D5CA615/pch/Arduino.h"
             ],
             "cStandard": "c11",
             "cppStandard": "c++14",

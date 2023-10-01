@@ -136,6 +136,7 @@ std_msgs::String string_msg;
 // // Record to SD
 File file;
 const char* data_name = "230908_1.txt";
+bool record_flag = false;
 
 
 // ======================================== Functions ======================================== 
@@ -149,9 +150,11 @@ void kbCallback(const std_msgs::String & msg){
   // Serial.println(state);
   
   // record to SD
-  // if (key != "0"){
-  //   file.println(key);
-  // } 
+  if (record_flag == true){
+      if (key != "0"){
+      file.println(key);
+    } 
+  }
 }
 ros::Subscriber<std_msgs::String> kbSub("publisher_keyboard", kbCallback);
 
@@ -225,7 +228,9 @@ void Output(int output[]){
     state += " / ";
   }
   // Serial.println(state);
-  file.println(state);
+  if (record_flag == true){
+    file.println(state);
+  }
 }
 
 int get_PWM(int PIN_input, int direction){
@@ -463,7 +468,9 @@ void Stay(){
 void setup() {
 
   // Record to SD
-  record_to_SD_file();
+  if (record_flag == true){
+    record_to_SD_file();
+  }
 
   // Subscribe to keyboard node in ROS
   node.initNode();
@@ -548,8 +555,10 @@ void loop() {
       Stay();
     }
     else if (key == "Q"){
-      file.close();
-      Serial.println(" --- save to SD ---");
+      if (record_flag == true){
+        file.close();
+        Serial.println(" --- save to SD ---");
+      }
     }
     
     key = "0";

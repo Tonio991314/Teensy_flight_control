@@ -10,5 +10,6 @@
     ],
     "files.associations": {
         "cmath": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/home/drone/Arduino/build/catkin_generated/metapackages/rosserial"
 }
