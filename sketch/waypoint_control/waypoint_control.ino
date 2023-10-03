@@ -146,7 +146,7 @@ int radio_channel_range[7]; // idx 1 to 6 mean radio channel full range
 int output[13]; // output array to Output() function, idx 7~12 mean pin 7~12 (channel 1~6) 
 bool listen_to_radio = true;
 
-// ROS node 
+// ROS node
 String key = "0"; // initial key, set to "0"
 // double x_current_pos, y_current_pos;
 ros::NodeHandle node;
@@ -164,9 +164,17 @@ typedef struct {
 Position_dict position_dict;
 float drift_radius = 0.0;
 float drift_theta = 0.0;
-float drift_threshold = 0.25; // m
+float drift_threshold_low = 0.25; // m
+// float drift_threshold_high = 0.5; // m
 float path_threshold = 0.25; // m
+bool print_pose = true;
+String move_type = "Holding";
+float move_length = 0.6; // m
 
+// PID control
+float Kp = 0.5;
+float Ki = 0.5;
+float Kd = 0.5;
 
 // Record to SD
 File file;
@@ -193,25 +201,25 @@ void kbCallback(const std_msgs::String & msg){
 ros::Subscriber<std_msgs::String> kbSub("publisher_keyboard", kbCallback);
 
 // Subscribe current pose
+
 void poseCallback(const geometry_msgs::PoseStamped& msg){
-    int count = 0;
-    if (count % 5 == 0){
-      position_dict.x_now_pos = -msg.pose.position.x;
-      position_dict.y_now_pos = -msg.pose.position.y;
-      count++;
-    }
+
+    position_dict.x_now_pos = -msg.pose.position.x;
+    position_dict.y_now_pos = -msg.pose.position.y;
     drift_radius = sqrt(pow((position_dict.x_now_pos - position_dict.x_current_pos), 2) +
                         pow((position_dict.y_now_pos - position_dict.y_current_pos), 2));
 
     drift_theta = atan2((position_dict.y_now_pos - position_dict.y_current_pos), 
                         (position_dict.x_now_pos - position_dict.x_current_pos)) * 180 / 3.1415926; // from current to now
 
-    Serial.print("x_now: ");
-    Serial.print(position_dict.x_now_pos);
-    Serial.print(", y_now: ");
-    Serial.print(position_dict.y_now_pos);
-    Serial.print(", drift_radius: ");
-    Serial.println(drift_radius);
+    if ( print_pose == true){
+      Serial.print("x_now: ");
+      Serial.print(position_dict.x_now_pos);
+      Serial.print(", y_now: ");
+      Serial.print(position_dict.y_now_pos);
+      Serial.print(", drift_radius: ");
+      Serial.println(drift_radius);
+    } 
 }
 ros::Subscriber<geometry_msgs::PoseStamped> poseSub("online_2d_robot_pose", poseCallback);
 
@@ -265,7 +273,8 @@ void radio_calibration(){
     Serial.print(", ");
   }
   Serial.println();
-  Serial.print(" --- Radio calibration end ---");
+  Serial.println(" ===================== Radio calibration end ===================== ");
+
 }
 
 void RadioInput(){
@@ -279,11 +288,11 @@ void Output(int output[]){
   for (int pin = 7; pin <= 12; pin++) {
     analogWrite(pin, map(output[pin], 0, full_pulse, 0, pow(2, resolution)-1));
 
-    state += "Channel ";
-    state += String(pin);
-    state += ": ";
-    state += String(output[pin]);
-    state += " / ";
+    // state += "Channel ";
+    // state += String(pin);
+    // state += ": ";
+    // state += String(output[pin]);
+    // state += " / ";
   }
   if (record_flag == true){
     file.println(state);
@@ -308,31 +317,29 @@ int get_PWM(int PIN_input, int direction){
   return round(float(min) + float(max - min) * percentage / 100);
 }
 
-void print_state(int PIN_intput_array[], int direction[], int size, bool Do){
-
-  String state = "[Action] ";
-  if (Do){
-    for (int idx = 0; idx < size; idx++){
-      // print state
-      state += pin_dict[PIN_intput_array[idx]].name;
-      state += " from ";
-      state += String(action_percentage[pin_dict[PIN_intput_array[idx]+6].percentage_pos]);
-      state += "% to ";
-      if (pin_dict[PIN_intput_array[idx]+6].percentage_pos + direction[idx] >= 0 && pin_dict[PIN_intput_array[idx]+6].percentage_pos + direction[idx] < action_percentage_length){
-        state += String(action_percentage[pin_dict[PIN_intput_array[idx]+6].percentage_pos + direction[idx]]);
-
-        // update percentage position
-        pin_dict[PIN_intput_array[idx]+6].percentage_pos += direction[idx];
-      }else{
-        state += String(action_percentage[pin_dict[PIN_intput_array[idx]+6].percentage_pos]);
-      }
-      state += "% / ";
-    }
-  }else{
-    state += "DO nothing";
-  }
-  Serial.println(state);
-}
+// void print_state(int PIN_intput_array[], int direction[], int size, bool Do){
+//   String state = "[Action] ";
+//   if (Do){
+//     for (int idx = 0; idx < size; idx++){
+//       // print state
+//       state += pin_dict[PIN_intput_array[idx]].name;
+//       state += " from ";
+//       state += String(action_percentage[pin_dict[PIN_intput_array[idx]+6].percentage_pos]);
+//       state += "% to ";
+//       if (pin_dict[PIN_intput_array[idx]+6].percentage_pos + direction[idx] >= 0 && pin_dict[PIN_intput_array[idx]+6].percentage_pos + direction[idx] < action_percentage_length){
+//         state += String(action_percentage[pin_dict[PIN_intput_array[idx]+6].percentage_pos + direction[idx]]);
+//         // update percentage position
+//         pin_dict[PIN_intput_array[idx]+6].percentage_pos += direction[idx];
+//       }else{
+//         state += String(action_percentage[pin_dict[PIN_intput_array[idx]+6].percentage_pos]);
+//       }
+//       state += "% / ";
+//     }
+//   }else{
+//     state += "DO nothing";
+//   }
+//   Serial.println(state);
+// }
 
 void record_to_SD_file(){
   // Record to SD card
@@ -347,97 +354,141 @@ void record_to_SD_file(){
 }
 
 // ======================================== Actions ========================================
-// Holding
-void Holding(){
-  while(listen_to_radio == false && drift_radius > drift_threshold){
-    if (abs(drift_theta - 0) < 5){
-      Holding_flow(action_index.left);
-    }
-    else if (drift_theta >= 5 && drift_theta <= 40){
-      Holding_flow(action_index.llb);
-    }
-    else if (abs(drift_theta - 45) < 5){
-      Holding_flow(action_index.left_backward);
-    }
-    else if (drift_theta >= 50 && drift_theta <= 85){
-      Holding_flow(action_index.blb);
-    }
-    else if (abs(drift_theta - 90) < 5){
-      Holding_flow(action_index.backward);
-    }
-    else if (drift_theta >= 95 && drift_theta <= 130){
-      Holding_flow(action_index.brb);
-    }
-    else if (abs(drift_theta - 135) < 5){
-      Holding_flow(action_index.right_backward);
-    }
-    else if (drift_theta >= 140 && drift_theta <= 175){
-      Holding_flow(action_index.rrb);
-    }
-    else if (abs(drift_theta - 180) < 5){
-      Holding_flow(action_index.right);
-    }
-    else if (drift_theta >= -40 && drift_theta <= -5){
-      Holding_flow(action_index.llf);
-    }
-    else if (abs(drift_theta - (-45)) < 5){
-      Holding_flow(action_index.left_forward);
-    }
-    else if (drift_theta >= -85 && drift_theta <= -50){
-      Holding_flow(action_index.flf);
-    }
-    else if (abs(drift_theta - (-90)) < 5){
-      Holding_flow(action_index.forward);
-    }
-    else if (drift_theta >= -130 && drift_theta <= -95){
-      Holding_flow(action_index.frf);
-    }
-    else if (abs(drift_theta - (-135)) < 5){
-      Holding_flow(action_index.right_forward);
-    }
-    else if (drift_theta >= -175 && drift_theta <= -140){
-      Holding_flow(action_index.rrf);
-    }
-    else if (abs(drift_theta - (-180)) < 5){
-      Holding_flow(action_index.right);
-    }
-    node.spinOnce();
+// moving flow -> for holding and waypoint control
+void PID_holding(){
 
-    RadioInput();
-    Stay();
-    output[PIN_yaw_output] = radio_input[PIN_yaw_input];
-    output[PIN_throttle_output] = radio_input[PIN_throttle_input];
-
-    if (radio_input[5] <= 1300 || radio_input[5] >= 1700){
-      listen_to_radio = true;
-      break;
-    }     
-  } 
 }
+int inverse_action_idx;
+void moving_flow(int action_idx, int inverse_action_idx, String move_type){
 
-void Holding_flow(int action_idx){
-
-  Serial.print(" --- Need to ");
-  Serial.println(action_dict[action_idx].name);
-
-  int inverse_action_idx;
-
-  if (action_idx < 8){
-    inverse_action_idx = action_idx + 8;
-  }else if (action_idx >= 8){
-    inverse_action_idx = action_idx - 8;
+  print_pose = false;
+  
+  // check if drone out of control and need to listen to the radio
+  RadioInput();
+  output[PIN_yaw_output] = radio_input[PIN_yaw_input];
+  output[PIN_throttle_output] = radio_input[PIN_throttle_input];
+  if (radio_input[5] <= 1300 || radio_input[5] >= 1700){
+    listen_to_radio = true;
+    print_pose = true;
   }
 
+  // print state
+  Serial.print(" --- [");
+  Serial.print(move_type);
+  Serial.print("] Action --> ");
+  Serial.println(action_dict[action_idx].name);
+
+  // Move!!
   Action(action_idx);
   delay(600);
-  Stay();
-  // Action(action_idx);
-
-  delay(30);
   Action(inverse_action_idx);
   delay(200);
   Stay();
-  
+  delay(50);
+  Action(action_idx);
+  delay(100);
+  Action(inverse_action_idx);
+  delay(50);
+  Stay();
+
+  node.spinOnce();
+}
+// Holding
+void Holding(){
+  move_type = "Holding";
+  print_pose = false;
+  while(listen_to_radio == false && drift_radius > drift_threshold_low){
+    if (abs(drift_theta - 0) < 5){
+      moving_flow(action_index.left, action_index.right, move_type);
+    }
+    else if (drift_theta >= 5 && drift_theta <= 40){
+      moving_flow(action_index.llb, action_index.rrf, move_type);
+    }
+    else if (abs(drift_theta - 45) < 5){
+      moving_flow(action_index.left_backward, action_index.right_forward, move_type);
+    }
+    else if (drift_theta >= 50 && drift_theta <= 85){
+      moving_flow(action_index.blb, action_index.frf, move_type);
+    }
+    else if (abs(drift_theta - 90) < 5){
+      moving_flow(action_index.backward, action_index.forward, move_type);
+    }
+    else if (drift_theta >= 95 && drift_theta <= 130){
+      moving_flow(action_index.brb, action_index.flf, move_type);
+    }
+    else if (abs(drift_theta - 135) < 5){
+      moving_flow(action_index.right_backward, action_index.left_forward, move_type);
+    }
+    else if (drift_theta >= 140 && drift_theta <= 175){
+      moving_flow(action_index.rrb, action_index.llf, move_type);
+    }
+    else if (abs(drift_theta - 180) < 5){
+      moving_flow(action_index.right, action_index.left, move_type);
+    }
+    else if (drift_theta >= -40 && drift_theta <= -5){
+      moving_flow(action_index.llf, action_index.rrb, move_type);
+    }
+    else if (abs(drift_theta - (-45)) < 5){
+      moving_flow(action_index.left_forward, action_index.right_backward, move_type);
+    }
+    else if (drift_theta >= -85 && drift_theta <= -50){
+      moving_flow(action_index.flf, action_index.brb, move_type);
+    }
+    else if (abs(drift_theta - (-90)) < 5){
+      moving_flow(action_index.forward, action_index.backward, move_type);
+    }
+    else if (drift_theta >= -130 && drift_theta <= -95){
+      moving_flow(action_index.frf, action_index.blb, move_type);
+    }
+    else if (abs(drift_theta - (-135)) < 5){
+      moving_flow(action_index.right_forward, action_index.left_backward, move_type);
+    }
+    else if (drift_theta >= -175 && drift_theta <= -140){
+      moving_flow(action_index.rrf, action_index.llb, move_type);
+    }
+    else if (abs(drift_theta - (-180)) < 5){
+      moving_flow(action_index.right, action_index.left, move_type);
+    }      
+  }
+
+  Serial.println(" ===================== Holding finish ===================== ");
+  print_pose = true;
+  node.spinOnce();
+}
+// Waypoint control
+void waypoint_control(float delta_x, float delta_y){
+  move_type = "Waypoint moving";
+  print_pose = false;
+  float x_target_pos = position_dict.x_current_pos + delta_x;
+  float y_target_pos = position_dict.y_current_pos + delta_y;
+
+  // x-axis moving
+  if (delta_x > 0){ // go right
+    while (listen_to_radio == false && abs(position_dict.x_now_pos - x_target_pos) > path_threshold){
+      moving_flow(action_index.right, action_index.left, move_type);
+    }
+  }else if (delta_x < 0){ // go left
+    while (listen_to_radio == false && abs(position_dict.x_now_pos - x_target_pos) > path_threshold){
+      moving_flow(action_index.left, action_index.right, move_type);
+    }
+  }
+  // y-axis moving
+  if (delta_y > 0){ // go forward
+    while (listen_to_radio == false && abs(position_dict.y_now_pos - y_target_pos) > path_threshold){
+      moving_flow(action_index.forward, action_index.backward, move_type);
+    }
+  }else if (delta_y < 0){ // go backward
+    while (listen_to_radio == false && abs(position_dict.y_now_pos - y_target_pos) > path_threshold){
+      moving_flow(action_index.backward, action_index.forward, move_type);
+    }
+  }
+
+  Serial.println(" ===================== Waypoint move finish ===================== ");
+  print_pose = true;
+
+  // update current position
+  position_dict.x_current_pos = x_target_pos;
+  position_dict.y_current_pos = y_target_pos;
   node.spinOnce();
 }
 
@@ -565,67 +616,6 @@ void Stay(){
   Output(output);
 }
 
-void moving_flow(int action_idx){
-  Action(action_idx);
-  delay(100);
-  Stay();
-  node.spinOnce();
-
-  RadioInput();
-  output[PIN_yaw_output] = radio_input[PIN_yaw_input];
-  output[PIN_throttle_output] = radio_input[PIN_throttle_input];
-
-  Serial.println(" --- moving... --- ");
-
-  if (radio_input[5] <= 1300 || radio_input[5] >= 1700){
-    listen_to_radio = true;
-  }     
-}
-
-// control planning
-void waypoing_control(float delta_x, float delta_y){
-  float x_target_pos = position_dict.x_current_pos + delta_x;
-  float y_target_pos = position_dict.y_current_pos + delta_y;
-
-  // x-axis moving
-  if (delta_x > 0){ // go right
-    while (listen_to_radio == false && abs(position_dict.x_now_pos - x_target_pos) > path_threshold){
-      moving_flow(action_index.right);
-    }
-    Action(action_index.left);
-    delay(100);
-    Stay();
-  }else if (delta_x < 0){ // go left
-    while (listen_to_radio == false && abs(position_dict.x_now_pos - x_target_pos) > path_threshold){
-      moving_flow(action_index.left);
-    }
-    Action(action_index.right);
-    delay(100);
-    Stay();
-  }
-
-  // y-axis moving
-  if (delta_y > 0){ // go forward
-    while (listen_to_radio == false && abs(position_dict.y_now_pos - y_target_pos) > path_threshold){
-      moving_flow(action_index.forward);
-    }
-    Action(action_index.backward);
-    delay(100);
-    Stay();
-  }else if (delta_y < 0){ // go backward
-    while (listen_to_radio == false && abs(position_dict.y_now_pos - y_target_pos) > path_threshold){
-      moving_flow(action_index.backward);
-    }
-    Action(action_index.forward);
-    delay(100);
-    Stay();
-  }
-  Serial.print(" ================= move finish ================== ");
-  position_dict.x_current_pos = x_target_pos;
-  position_dict.y_current_pos = y_target_pos;
-  node.spinOnce();
-}
-
 // ======================================== Main code ========================================
 void setup() {
 
@@ -670,6 +660,7 @@ void loop() {
     listen_to_radio = false;
   }else{
     listen_to_radio = true;
+    print_pose = true;
   }
   
   if (listen_to_radio == false) {
@@ -681,16 +672,16 @@ void loop() {
     }
     // MAIN CODE of waypoint control
     else if (key == "6"){ // move +1 m in x-axis
-      waypoing_control(0.6, 0);
+      waypoint_control(move_length, 0);
     }
     else if (key == "4"){ // move -1 m in x-axis
-      waypoing_control(-0.6, 0);
+      waypoint_control(-move_length, 0);
     }
     else if (key == "8"){ // move +1 m in y-axis
-      waypoing_control(0, 0.6);
+      waypoint_control(0, move_length);
     }
     else if (key == "2"){ // move -1 m in y-axis
-      waypoing_control(0, -0.6);
+      waypoint_control(0, -move_length);
     }
     else if (key == "5"){ // stay
       Stay();
@@ -765,7 +756,7 @@ void loop() {
       output[pin+6] = radio_input[pin];
     }
     Output(output);
-    Serial.println(" --- Listen to Radio ---");
+    Serial.println(" ===================== Listen to the radio ===================== ");
   }
   delay(10);
 }  
